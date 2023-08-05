@@ -495,12 +495,16 @@ def do_render(
             if pathlib.Path(filename).exists() and check_input_hash:
                 with open(filename) as f:
                     previous_hash = extract_input_hash(f.read())
+                breakpoint()
                 if previous_hash == lockfile.metadata.content_hash.get(plat):
                     print(
                         f"Lock content already rendered for {plat}. Skipping render of {filename}.",
                         file=sys.stderr,
                     )
                     continue
+                else:
+                    print("STUFF")
+                    raise RuntimeError("This lock file is shit. Fix your shit.")
 
             print(f"Rendering lockfile(s) for {plat}...", file=sys.stderr)
             lockfile_contents = render_lockfile_for_platform(
