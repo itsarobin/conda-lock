@@ -256,6 +256,7 @@ def make_lock_files(  # noqa: C901
     filter_categories: bool = False,
     extras: Optional[AbstractSet[str]] = None,
     check_input_hash: bool = False,
+    check_input_hash_and_fail: bool = False,
     metadata_choices: AbstractSet[MetadataOption] = frozenset(),
     metadata_yamls: Sequence[pathlib.Path] = (),
     with_cuda: Optional[str] = None,
@@ -348,14 +349,21 @@ def make_lock_files(  # noqa: C901
                 lock_content = None
         else:
             lock_content = None
-        breakpoint()
         if lock_content is not None:
             platforms_already_locked = list(lock_content.metadata.platforms)
             update_spec = UpdateSpecification(
                 locked=lock_content.package, update=update
             )
+            # breakpoint()
             for platform in lock_spec.platforms:
-                if (
+                hashes_match = (
+                    lock_spec.content_hash_for_platform(platform)
+                    == lock_content.metadata.content_hash[platform]
+                )
+                if check_input_hash_and_fail and not hashes_match:
+                    print("STUFFFFFFFFF")
+                    sys.exit(5)
+                elif (
                     update
                     or platform not in lock_content.metadata.platforms
                     or not check_input_hash
@@ -495,7 +503,7 @@ def do_render(
             if pathlib.Path(filename).exists() and check_input_hash:
                 with open(filename) as f:
                     previous_hash = extract_input_hash(f.read())
-                breakpoint()
+                # breakpoint()
                 if previous_hash == lockfile.metadata.content_hash.get(plat):
                     print(
                         f"Lock content already rendered for {plat}. Skipping render of {filename}.",
@@ -1167,6 +1175,12 @@ TLogLevel = Union[
     help="Check existing input hashes in lockfiles before regenerating lock files.  If no files were updated exit with exit code 4.  Incompatible with --strip-auth",
 )
 @click.option(
+    "--check-input-hash-and-fail",
+    is_flag=True,
+    default=False,
+    help="Check existing input hashes in lockfiles. If they don't match exit with code 5.",
+)
+@click.option(
     "--log-level",
     help="Log level.",
     default="INFO",
@@ -1240,6 +1254,7 @@ def lock(
     extras: List[str],
     filter_categories: bool,
     check_input_hash: bool,
+    check_input_hash_and_fail: bool,
     log_level: TLogLevel,
     pdb: bool,
     virtual_package_spec: Optional[pathlib.Path],
