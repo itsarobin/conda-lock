@@ -348,7 +348,7 @@ def make_lock_files(  # noqa: C901
                 lock_content = None
         else:
             lock_content = None
-
+        breakpoint()
         if lock_content is not None:
             platforms_already_locked = list(lock_content.metadata.platforms)
             update_spec = UpdateSpecification(
